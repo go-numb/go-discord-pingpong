@@ -3,6 +3,8 @@
 
 ping,pongに加え、ChatGPT APIによる返答が含まれています。
 
+![screenshot](https://github.com/go-numb/go-discord-pingpong/blob/images/sc.png)
+
 ## Usage
 ```sh
 $ git clone https://github.com/go-numb/go-discord-pingpong.git
