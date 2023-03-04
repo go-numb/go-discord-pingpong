@@ -62,8 +62,8 @@ func main() {
 		ctx: context.Background(),
 		c:   gogpt.NewClient(CHATGPTAPITOKEN),
 	}
-	gpt.Request(SYSTEM, FIRSTDEFIN)
-	log.Info("set client")
+
+	log.Info("set client ", gpt.Request(SYSTEM, FIRSTDEFIN))
 
 	// Register the messageCreate func as a callback for MessageCreate events.
 	dg.AddHandler(gpt.messageCreate)
@@ -95,29 +95,29 @@ var (
 // This function will be called (due to AddHandler above) every time a new
 // message is created on any channel that the authenticated bot has access to.
 func (c *Client) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-
+	channelname := m.ChannelID
 	// Ignore all messages created by the bot itself
 	// This isn't required in this specific example but it's a good practice.
 	if m.Author.ID == s.State.User.ID {
-		log.Warn("botself")
+		log.Warn("botself, channel id: ", channelname)
 		return
 	}
 
 	if !strings.Contains(m.Content, BOTID) {
-		log.Info("have nothing")
+		log.Info("have nothing, channel id: ", channelname)
 		return
 	}
 
 	// If the message is "ping" reply with "Pong!"
-	if strings.Contains(m.Content, "ping") {
-		log.Info("return pong")
+	if strings.HasPrefix(m.Content, "ping") {
+		log.Info("return pong, channel id: ", channelname)
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 		return
 	}
 
 	// If the message is "pong" reply with "Ping!"
-	if strings.Contains(m.Content, "ping") {
-		log.Info("return ping")
+	if strings.HasPrefix(m.Content, "ping") {
+		log.Info("return ping, channel id: ", channelname)
 		s.ChannelMessageSend(m.ChannelID, "Ping!")
 		return
 	}
@@ -141,7 +141,7 @@ func (c *Client) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate)
 
 	log.Info("chat", m.Content)
 	if !isPermission {
-		log.Info("permission is false")
+		log.Info("permission is false, channel id: ", channelname)
 		return
 	}
 
@@ -161,7 +161,7 @@ func (c *Client) LetChatGPT(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func (c *Client) Request(uid, q string) string {
 	t := time.Now()
-	defer log.Fatal(time.Since(t))
+	defer log.Info(time.Since(t))
 
 	if uid == "" {
 		return WHOIS
@@ -184,6 +184,13 @@ func (c *Client) Request(uid, q string) string {
 		return err.Error()
 	}
 
+	if uid == SYSTEM {
+		chats = append(chats, gogpt.ChatCompletionMessage{
+			Role:    uid,
+			Content: q,
+		})
+		return "set paramater"
+	}
 	chats = append(chats, gogpt.ChatCompletionMessage{
 		Role:    USER,
 		Content: q,
