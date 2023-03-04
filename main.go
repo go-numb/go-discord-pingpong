@@ -123,16 +123,16 @@ func (c *Client) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate)
 	}
 
 	q := strings.ToLower(m.Content)
-	if q == "reset" {
+	if strings.Contains(q, "reset!") {
 		chats = []gogpt.ChatCompletionMessage{}
 		s.ChannelMessageSend(m.ChannelID, "Successfully reset the history of chat so far")
 		return
-	} else if q == "exit" {
+	} else if strings.Contains(q, "exit!") {
 		log.Info("permission false, temporarily suspended")
 		isPermission = false
 		s.ChannelMessageSend(m.ChannelID, "permission false, temporarily suspended. to restart, please utilize the [start] command")
 		return
-	} else if q == "start" {
+	} else if strings.Contains(q, "start!") {
 		log.Info("permission true, restart")
 		isPermission = true
 		s.ChannelMessageSend(m.ChannelID, "permission true, restart")
