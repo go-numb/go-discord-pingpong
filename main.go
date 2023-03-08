@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"math"
 	"os"
 	"os/signal"
 	"strings"
@@ -154,9 +155,22 @@ type Client struct {
 	c   *gogpt.Client
 }
 
+const MAXLENGTH = 2000
+
 func (c *Client) LetChatGPT(s *discordgo.Session, m *discordgo.MessageCreate) {
 	q := strings.Replace(m.Content, "/chat", "", 1)
-	s.ChannelMessageSend(m.ChannelID, c.Request(m.Author.ID, q))
+
+	res := c.Request(m.Author.ID, q)
+	l := int(math.Ceil(float64(len(res)) / float64(MAXLENGTH)))
+	for i := 0; i < l; i++ {
+		if len(res) > MAXLENGTH {
+			s.ChannelMessageSend(m.ChannelID, res[:MAXLENGTH])
+			res = res[MAXLENGTH:]
+		} else {
+			s.ChannelMessageSend(m.ChannelID, res)
+			return
+		}
+	}
 }
 
 func (c *Client) Request(uid, q string) string {
