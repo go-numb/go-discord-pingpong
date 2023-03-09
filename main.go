@@ -179,7 +179,8 @@ const MAXLENGTH = 2000
 
 func (c *Client) LetChatGPT(s *discordgo.Session, m *discordgo.MessageCreate) {
 	q := strings.Replace(m.Content, "/chat", "", 1)
-	c._sendDiscord(s, m, q)
+	res := c.Request(m.Author.ID, q)
+	c._sendDiscord(s, m, res)
 }
 
 func (c *Client) MakePrompts(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -207,15 +208,14 @@ func (c *Client) MakePrompts(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func (c *Client) _sendDiscord(s *discordgo.Session, m *discordgo.MessageCreate, q string) {
-	res := c.Request(m.Author.ID, q)
-	l := int(math.Ceil(float64(len(res)) / float64(MAXLENGTH)))
+	l := int(math.Ceil(float64(len(q)) / float64(MAXLENGTH)))
 	for i := 0; i < l; i++ {
-		if len(res) > MAXLENGTH {
-			s.ChannelMessageSend(m.ChannelID, res[:MAXLENGTH])
-			res = res[MAXLENGTH:]
+		if len(q) > MAXLENGTH {
+			s.ChannelMessageSend(m.ChannelID, q[:MAXLENGTH])
+			q = q[MAXLENGTH:]
 			time.Sleep(time.Second)
 		} else {
-			s.ChannelMessageSend(m.ChannelID, res)
+			s.ChannelMessageSend(m.ChannelID, q)
 			return
 		}
 	}
