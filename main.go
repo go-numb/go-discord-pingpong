@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"os"
 	"os/signal"
@@ -9,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	prompts "github.com/go-numb/chatgpt-prompts-maker"
 	"github.com/labstack/gommon/log"
 
 	"github.com/bwmarrin/discordgo"
@@ -60,8 +62,9 @@ func main() {
 	}
 
 	gpt := &Client{
-		ctx: context.Background(),
-		c:   gogpt.NewClient(CHATGPTAPITOKEN),
+		ctx:     context.Background(),
+		c:       gogpt.NewClient(CHATGPTAPITOKEN),
+		Prompts: prompts.New(),
 	}
 
 	log.Info("set client ", gpt.Request(SYSTEM, FIRSTDEFIN))
@@ -109,6 +112,9 @@ func (c *Client) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate)
 		return
 	}
 
+	// replace @XXXX to ""
+	m.Content = strings.Replace(m.Content, BOTID, "", -1)
+
 	// If the message is "ping" reply with "Pong!"
 	if strings.HasPrefix(m.Content, "ping") {
 		log.Info("return pong, channel id: ", channelname)
@@ -138,6 +144,10 @@ func (c *Client) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate)
 		isPermission = true
 		s.ChannelMessageSend(m.ChannelID, "permission true, restart")
 		return
+	} else if strings.Contains(m.Content, "prompts!") {
+		log.Info("return prompts list and set to gpt")
+		c.MakePrompts(s, m)
+		return
 	}
 
 	log.Info("chat", m.Content)
@@ -151,15 +161,43 @@ func (c *Client) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate)
 }
 
 type Client struct {
-	ctx context.Context
-	c   *gogpt.Client
+	ctx     context.Context
+	c       *gogpt.Client
+	Prompts *prompts.Order
 }
 
 const MAXLENGTH = 2000
 
 func (c *Client) LetChatGPT(s *discordgo.Session, m *discordgo.MessageCreate) {
 	q := strings.Replace(m.Content, "/chat", "", 1)
+	c._sendDiscord(s, m, q)
+}
 
+func (c *Client) MakePrompts(s *discordgo.Session, m *discordgo.MessageCreate) {
+	acts := make([]string, len(c.Prompts.Acts))
+	for i := 0; i < len(c.Prompts.Acts); i++ {
+		acts[i] = c.Prompts.Acts[i].Actor
+	}
+
+	c._sendDiscord(s, m, strings.Join(acts, "\n"))
+
+	for i := 0; i < len(c.Prompts.Acts); i++ {
+		q := fmt.Sprintf("prompts!%d", i)
+		if strings.Contains(m.Content, q) {
+			c.Prompts.Type = prompts.TypeN(i)
+			actor, prompt := c.Prompts.Prompt(true)
+			log.Infof("set act: %s, prompt: %s", actor, prompt)
+			if res := c.Request(SYSTEM, prompt); res != "" {
+				c._sendDiscord(s, m, fmt.Sprintf("success set actor: %s", actor))
+			} else {
+				c._sendDiscord(s, m, fmt.Sprintf("fail set actor: %s", actor))
+			}
+			return
+		}
+	}
+}
+
+func (c *Client) _sendDiscord(s *discordgo.Session, m *discordgo.MessageCreate, q string) {
 	res := c.Request(m.Author.ID, q)
 	l := int(math.Ceil(float64(len(res)) / float64(MAXLENGTH)))
 	for i := 0; i < l; i++ {
