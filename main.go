@@ -144,9 +144,18 @@ func (c *Client) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate)
 		isPermission = true
 		s.ChannelMessageSend(m.ChannelID, "permission true, restart")
 		return
-	} else if strings.Contains(m.Content, "prompts!") {
+	} else if strings.Contains(q, "prompts!") {
 		log.Info("return prompts list and set to gpt")
 		c.MakePrompts(s, m)
+		return
+	} else if strings.Contains(q, "help!") {
+		log.Info("return help list")
+		c._sendDiscord(s, m, `command:
+		- reset!: 履歴を削除します
+		- exit!: 権限を取り上げます
+		- start!: 権限を与えます
+		- prompts!: 役割のリストを返します
+		- prompts!$n!: 役割を与えます`)
 		return
 	}
 
@@ -182,7 +191,7 @@ func (c *Client) MakePrompts(s *discordgo.Session, m *discordgo.MessageCreate) {
 	c._sendDiscord(s, m, strings.Join(acts, "\n"))
 
 	for i := 0; i < len(c.Prompts.Acts); i++ {
-		q := fmt.Sprintf("prompts!%d", i)
+		q := fmt.Sprintf("prompts!%d!", i)
 		if strings.Contains(m.Content, q) {
 			c.Prompts.Type = prompts.TypeN(i)
 			actor, prompt := c.Prompts.Prompt(true)
@@ -204,6 +213,7 @@ func (c *Client) _sendDiscord(s *discordgo.Session, m *discordgo.MessageCreate, 
 		if len(res) > MAXLENGTH {
 			s.ChannelMessageSend(m.ChannelID, res[:MAXLENGTH])
 			res = res[MAXLENGTH:]
+			time.Sleep(time.Second)
 		} else {
 			s.ChannelMessageSend(m.ChannelID, res)
 			return
