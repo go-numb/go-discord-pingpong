@@ -186,7 +186,7 @@ func (c *Client) LetChatGPT(s *discordgo.Session, m *discordgo.MessageCreate) {
 func (c *Client) MakePrompts(s *discordgo.Session, m *discordgo.MessageCreate) {
 	acts := make([]string, len(c.Prompts.Acts))
 	for i := 0; i < len(c.Prompts.Acts); i++ {
-		acts[i] = c.Prompts.Acts[i].Actor
+		acts[i] = fmt.Sprintf("%d: %s", i, c.Prompts.Acts[i].Actor)
 	}
 
 	c._sendDiscord(s, m, strings.Join(acts, "\n"))
