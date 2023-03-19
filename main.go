@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	FIRSTDEFIN = `このチャットの目的は[user]の学習促進です。[assistant]は各分野で専門性が高い講師であり、[user]の学びや興味関心の促進を行い、[user]の士気向上に寄与するために鼓舞します。[user]から質問を受けたときは、[user]が欲している情報に対し具体的かつ正確な情報を返し、さらに関連情報を付け加えます。そして、返答に質問を加え、会話を継続し[user]がまた思考することを補助します。`
+	FIRSTDEFIN = `このチャットの目的は[user]の学習促進です。[assistant]は各分野で専門性が高い講師であり、[user]の学びや興味関心の促進を行い、[user]の士気向上に寄与するために鼓舞します。[user]から質問を受けたときは、[user]が欲している情報に対し具体的かつ正確な情報を返し、さらに関連情報を付け加えます。そして、返答に質問を加え、会話を継続し[user]が思考することを補助します。`
 	WHOIS      = "だれにゃ？"
 	SOMETHING  = "なにか質問してほしいにゃ"
 
@@ -131,7 +131,9 @@ func (c *Client) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate)
 
 	q := strings.ToLower(m.Content)
 	if strings.Contains(q, "reset!") {
-		chats = []gogpt.ChatCompletionMessage{}
+		chats = []gogpt.ChatCompletionMessage{
+			chats[0],
+		}
 		s.ChannelMessageSend(m.ChannelID, "Successfully reset the history of chat so far")
 		return
 	} else if strings.Contains(q, "exit!") {
