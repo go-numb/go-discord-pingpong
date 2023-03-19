@@ -249,11 +249,13 @@ func (c *Client) Request(uid, q string) string {
 	}
 
 	if uid == SYSTEM {
-		chats = append(chats, gogpt.ChatCompletionMessage{
-			Role:    uid,
-			Content: q,
-		})
-		return "set paramater"
+		chats = []gogpt.ChatCompletionMessage{
+			{
+				Role:    uid,
+				Content: q,
+			},
+		}
+		return fmt.Sprintf("set paramater\n%s", res.Choices[0].Message.Content)
 	}
 	chats = append(chats, gogpt.ChatCompletionMessage{
 		Role:    USER,
