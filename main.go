@@ -192,6 +192,7 @@ func (c *Client) MakePrompts(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	c._sendDiscord(s, m, strings.Join(acts, "\n"))
+	c._sendDiscord(s, m, "use prompts command: $ prompts!$act_key!")
 
 	for i := 0; i < len(c.Prompts); i++ {
 		q := fmt.Sprintf("%s!", c.Prompts[i].Title)
