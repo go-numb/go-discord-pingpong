@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	prompts "github.com/go-numb/chatgpt-prompts-maker"
+	myprompts "github.com/go-numb/my-prompts"
 	"github.com/labstack/gommon/log"
 
 	"github.com/bwmarrin/discordgo"
@@ -64,7 +64,7 @@ func main() {
 	gpt := &Client{
 		ctx:     context.Background(),
 		c:       gogpt.NewClient(CHATGPTAPITOKEN),
-		Prompts: prompts.New(),
+		Prompts: myprompts.List(),
 	}
 
 	log.Info("set client ", gpt.Request(SYSTEM, FIRSTDEFIN))
@@ -174,7 +174,7 @@ func (c *Client) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate)
 type Client struct {
 	ctx     context.Context
 	c       *gogpt.Client
-	Prompts *prompts.Order
+	Prompts []myprompts.Prompt
 }
 
 const MAXLENGTH = 2000
@@ -186,23 +186,22 @@ func (c *Client) LetChatGPT(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func (c *Client) MakePrompts(s *discordgo.Session, m *discordgo.MessageCreate) {
-	acts := make([]string, len(c.Prompts.Acts))
-	for i := 0; i < len(c.Prompts.Acts); i++ {
-		acts[i] = fmt.Sprintf("%d: %s", i, c.Prompts.Acts[i].Actor)
+	acts := make([]string, len(c.Prompts))
+	for i := 0; i < len(c.Prompts); i++ {
+		acts[i] = fmt.Sprintf("%d: %s", i, c.Prompts[i].Title)
 	}
 
 	c._sendDiscord(s, m, strings.Join(acts, "\n"))
 
-	for i := 0; i < len(c.Prompts.Acts); i++ {
-		q := fmt.Sprintf("prompts!%d!", i)
+	for i := 0; i < len(c.Prompts); i++ {
+		q := fmt.Sprintf("%s!", c.Prompts[i].Title)
 		if strings.Contains(m.Content, q) {
-			c.Prompts.Type = prompts.TypeN(i)
-			actor, prompt := c.Prompts.Prompt(true)
-			log.Infof("set act: %s, prompt: %s", actor, prompt)
-			if res := c.Request(SYSTEM, prompt); res != "" {
-				c._sendDiscord(s, m, fmt.Sprintf("success set actor: %s", actor))
+			command := c.Prompts[i].Replace("user", "assistant", "3").Command
+			log.Infof("set act: %s", c.Prompts[i].Title, command)
+			if res := c.Request(SYSTEM, command); res != "" {
+				c._sendDiscord(s, m, fmt.Sprintf("success set actor: %s, say %s", c.Prompts[i].Title, res))
 			} else {
-				c._sendDiscord(s, m, fmt.Sprintf("fail set actor: %s", actor))
+				c._sendDiscord(s, m, fmt.Sprintf("fail set actor: %s, res: %s", c.Prompts[i].Title, res))
 			}
 			return
 		}
