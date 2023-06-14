@@ -236,7 +236,7 @@ func (c *Client) Request(uid, q string) string {
 	}
 
 	req := gogpt.ChatCompletionRequest{
-		Model: gogpt.GPT3Dot5Turbo,
+		Model: "gpt-3.5-turbo-16k",
 		Messages: append(chats, gogpt.ChatCompletionMessage{
 			Role:    USER,
 			Content: q,
