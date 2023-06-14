@@ -131,6 +131,10 @@ func (c *Client) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate)
 
 	q := strings.ToLower(m.Content)
 	if strings.Contains(q, "reset!") {
+		if len(chats) <= 0 {
+			s.ChannelMessageSend(m.ChannelID, "has not histories")
+			return
+		}
 		chats = []gogpt.ChatCompletionMessage{
 			chats[0],
 		}
