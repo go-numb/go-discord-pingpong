@@ -14,7 +14,7 @@ import (
 	"github.com/labstack/gommon/log"
 
 	"github.com/bwmarrin/discordgo"
-	gogpt "github.com/sashabaranov/go-gpt3"
+	gogpt "github.com/sashabaranov/go-openai"
 )
 
 const (
