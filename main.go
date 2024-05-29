@@ -25,23 +25,26 @@ const (
 	SYSTEM    = "system"
 	USER      = "user"
 	ASSISTANT = "assistant"
+
+	MODEL = "gpt-4o"
 )
 
 // Variables used for command line parameters
 var (
-	TOKEN           string
+	// 環境変数からの取得
+	DISCORDBOTTOKEN string
 	CHATGPTAPITOKEN string
 	BOTID           string
 )
 
 func init() {
 	log.SetLevel(log.INFO)
-	TOKEN = os.Getenv("DISCORDBOTTOKEN_01")
-	if TOKEN == "" {
+	DISCORDBOTTOKEN = os.Getenv("DISCORDBOTTOKEN")
+	if DISCORDBOTTOKEN == "" {
 		log.Fatal("token is nil")
 	}
 
-	CHATGPTAPITOKEN = os.Getenv("CHATGPTTOKEN")
+	CHATGPTAPITOKEN = os.Getenv("CHATGPTAPITOKEN")
 	if CHATGPTAPITOKEN == "" {
 		log.Fatal("chat gpt token is nil")
 	}
@@ -51,12 +54,12 @@ func init() {
 		log.Fatal("bot id is nil")
 	}
 
-	log.Info("bot token is ", TOKEN, "chat gpt token is ", CHATGPTAPITOKEN)
+	log.Info("bot token is ", DISCORDBOTTOKEN, "chat gpt token is ", CHATGPTAPITOKEN)
 }
 
 func main() {
 	// Create a new Discord session using the provided bot token.
-	dg, err := discordgo.New("Bot " + TOKEN)
+	dg, err := discordgo.New("Bot " + DISCORDBOTTOKEN)
 	if err != nil {
 		log.Fatal("error creating Discord session,", err)
 	}
@@ -229,7 +232,7 @@ func (c *Client) _sendDiscord(s *discordgo.Session, m *discordgo.MessageCreate, 
 
 func (c *Client) Request(uid, q string) string {
 	t := time.Now()
-	defer log.Info(time.Since(t))
+	defer log.Infof("%fs", time.Since(t).Seconds())
 
 	if uid == "" {
 		return WHOIS
@@ -240,10 +243,13 @@ func (c *Client) Request(uid, q string) string {
 	}
 
 	req := gogpt.ChatCompletionRequest{
-		Model: "gpt-3.5-turbo-16k",
+		Model: MODEL,
 		Messages: append(chats, gogpt.ChatCompletionMessage{
-			Role:    USER,
+			Role:    gogpt.ChatMessageRoleUser,
 			Content: q,
+			// MultiContent: []gogpt.ChatMessagePart{
+
+			// },
 		}),
 	}
 
