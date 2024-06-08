@@ -188,7 +188,7 @@ const MAXLENGTH = 2000
 
 func (c *Client) LetChatGPT(s *discordgo.Session, m *discordgo.MessageCreate) {
 	q := strings.Replace(m.Content, "/chat", "", 1)
-	res := c.Request(m.Author.ID, q)
+	res := c.Request(m.Author.ID, q, m.Attachments...)
 	c._sendDiscord(s, m, res)
 }
 
@@ -230,7 +230,7 @@ func (c *Client) _sendDiscord(s *discordgo.Session, m *discordgo.MessageCreate, 
 	}
 }
 
-func (c *Client) Request(uid, q string) string {
+func (c *Client) Request(uid, q string, files ...*discordgo.MessageAttachment) string {
 	t := time.Now()
 	defer log.Infof("%fs", time.Since(t).Seconds())
 
@@ -242,15 +242,38 @@ func (c *Client) Request(uid, q string) string {
 		return SOMETHING
 	}
 
-	req := gogpt.ChatCompletionRequest{
-		Model: MODEL,
-		Messages: append(chats, gogpt.ChatCompletionMessage{
-			Role:    gogpt.ChatMessageRoleUser,
-			Content: q,
-			// MultiContent: []gogpt.ChatMessagePart{
+	var req gogpt.ChatCompletionRequest
 
-			// },
-		}),
+	if len(chats) > 0 {
+		req = gogpt.ChatCompletionRequest{
+			Model: MODEL,
+			Messages: append(chats, gogpt.ChatCompletionMessage{
+				Role: gogpt.ChatMessageRoleUser,
+				MultiContent: []gogpt.ChatMessagePart{
+					{
+						Type: gogpt.ChatMessagePartTypeText,
+						Text: q,
+					},
+					{
+						Type: gogpt.ChatMessagePartTypeImageURL,
+						ImageURL: &gogpt.ChatMessageImageURL{
+							URL: files[0].URL,
+						},
+					},
+				},
+			}),
+		}
+	} else {
+		req = gogpt.ChatCompletionRequest{
+			Model: MODEL,
+			Messages: append(chats, gogpt.ChatCompletionMessage{
+				Role:    gogpt.ChatMessageRoleUser,
+				Content: q,
+				// MultiContent: []gogpt.ChatMessagePart{
+
+				// },
+			}),
+		}
 	}
 
 	res, err := c.c.CreateChatCompletion(c.ctx, req)
